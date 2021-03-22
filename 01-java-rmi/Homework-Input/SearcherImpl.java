@@ -15,43 +15,47 @@ class SearcherImpl implements Searcher {
 	 */
 	@Override
 	public int getDistance(Node from, Node to) {
-		// visited keeps the nodes visited in past steps.
-		Set<Node> visited = new HashSet<Node>();
-		// boundary keeps the nodes visited in current step.
-		Set<Node> boundary = new HashSet<Node>();
-
 		int distance = 0;
+		try {
+			// visited keeps the nodes visited in past steps.
+			Set<Node> visited = new HashSet<Node>();
+			// boundary keeps the nodes visited in current step.
+			Set<Node> boundary = new HashSet<Node>();
 
-		// We start from the source node.
-		boundary.add(from);
+			// We start from the source node.
+			boundary.add(from);
 
-		// Traverse the graph until finding the target node.
-		while (!boundary.contains(to)) {
-			// Not having anything to visit means the target node cannot be reached.
-			if (boundary.isEmpty())
-				return Searcher.DISTANCE_INFINITE;
+			// Traverse the graph until finding the target node.
+			while (!boundary.contains(to)) {
+				// Not having anything to visit means the target node cannot be reached.
+				if (boundary.isEmpty())
+					return Searcher.DISTANCE_INFINITE;
 
-			Set<Node> traversing = new HashSet<Node>();
+				Set<Node> traversing = new HashSet<Node>();
 
-			// Nodes visited in current step become nodes visited in past steps.
-			visited.addAll(boundary);
+				// Nodes visited in current step become nodes visited in past steps.
+				visited.addAll(boundary);
 
-			// Collect a set of immediate neighbors of nodes visited in current step.
-			for (Node node : boundary)
-				traversing.addAll(node.getNeighbors());
+				// Collect a set of immediate neighbors of nodes visited in current step.
+				for (Node node : boundary)
+					traversing.addAll(node.getNeighbors());
 
-			// Out of immediate neighbors, consider only those not yet visited.
-			for (Iterator<Node> node = traversing.iterator(); node.hasNext();) {
-				if (visited.contains(node.next()))
-					node.remove();
+				// Out of immediate neighbors, consider only those not yet visited.
+				for (Iterator<Node> node = traversing.iterator(); node.hasNext();) {
+					if (visited.contains(node.next()))
+						node.remove();
+				}
+
+				// Make these nodes the new nodes to be visited in current step.
+				boundary = traversing;
+
+				distance++;
 			}
 
-			// Make these nodes the new nodes to be visited in current step.
-			boundary = traversing;
-
-			distance++;
+		} catch (Exception e) {
+			System.out.println("Searcher Exception: " + e.getMessage());
+			e.printStackTrace();
 		}
-
 		return distance;
 	}
 
@@ -64,49 +68,54 @@ class SearcherImpl implements Searcher {
 	 */
 	@Override
 	public int getDistanceTransitive(int neighborDistance, Node from, Node to) {
-		// visited keeps the nodes visited in past steps.
-		Set<Node> visited = new HashSet<Node>();
-		// boundary keeps the nodes visited in current step.
-		Map<Node, Integer> boundary = new HashMap<Node, Integer>();
+		try {
+			// visited keeps the nodes visited in past steps.
+			Set<Node> visited = new HashSet<Node>();
+			// boundary keeps the nodes visited in current step.
+			Map<Node, Integer> boundary = new HashMap<Node, Integer>();
 
-		// We start from the source node.
-		boundary.put(from, 0);
+			// We start from the source node.
+			boundary.put(from, 0);
 
-		// Traverse the graph until finding the target node or having an empty boundary.
-		while (!boundary.isEmpty()) {
-			
-			Map<Node, Integer> traversing = new HashMap<Node, Integer>();
+			// Traverse the graph until finding the target node or having an empty boundary.
+			while (!boundary.isEmpty()) {
+				
+				Map<Node, Integer> traversing = new HashMap<Node, Integer>();
 
-			// Collect transitive neighbors of nodes visited in current step
-			for (Entry<Node, Integer> currentTuple : boundary.entrySet()) {
-				final Node currentNode = currentTuple.getKey();
-				final int currentDistance = currentTuple.getValue();
-				if (visited.contains(currentNode)) {
-					continue;
+				// Collect transitive neighbors of nodes visited in current step
+				for (Entry<Node, Integer> currentTuple : boundary.entrySet()) {
+					final Node currentNode = currentTuple.getKey();
+					final int currentDistance = currentTuple.getValue();
+					if (visited.contains(currentNode)) {
+						continue;
+					}
+
+					Map<Node, Integer> partialGraph = currentNode.getTransitiveNeighbors(neighborDistance);
+
+					// Store the distance of each transitive neighbor
+					for (Entry<Node, Integer> searchedTuple : partialGraph.entrySet()) {
+						final Node searchedNode = searchedTuple.getKey();
+						final int newDistance = currentDistance + searchedTuple.getValue();
+
+						Integer oldDistance = traversing.get(searchedNode); 
+						if (oldDistance == null || newDistance < oldDistance)
+							traversing.put(searchedNode, newDistance);
+					}
+
+					// Nodes visited in current step become nodes visited in past steps
+					visited.add(currentNode);
 				}
 
-				Map<Node, Integer> partialGraph = currentNode.getTransitiveNeighbors(neighborDistance);
+				// Check if the distance to the destination has been computed
+				Integer distance = traversing.get(to);
+				if (distance != null)
+					return distance;
 
-				// Store the distance of each transitive neighbor
-				for (Entry<Node, Integer> searchedTuple : partialGraph.entrySet()) {
-					final Node searchedNode = searchedTuple.getKey();
-					final int newDistance = currentDistance + searchedTuple.getValue();
-
-					Integer oldDistance = traversing.get(searchedNode); 
-					if (oldDistance == null || newDistance < oldDistance)
-						traversing.put(searchedNode, newDistance);
-				}
-
-				// Nodes visited in current step become nodes visited in past steps
-				visited.add(currentNode);
+				boundary = traversing;
 			}
-
-			// Check if the distance to the destination has been computed
-			Integer distance = traversing.get(to);
-			if (distance != null)
-				return distance;
-
-			boundary = traversing;
+		} catch (Exception e) {
+			System.out.println("Searcher Exception: " + e.getMessage());
+			e.printStackTrace();
 		}
 		// Not having anything to visit means the target node cannot be reached.
 		return Searcher.DISTANCE_INFINITE;

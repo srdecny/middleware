@@ -2,8 +2,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.io.Serializable;
 
-public class NodeImpl implements Node {
+public class NodeImpl implements Node, Serializable {
+	// Serializable objects need a version attribute,
+	// it is not used in this example though.
+	private static final long serialVersionUID = 0L;
+	
 	private final Set<Node> nodes = new HashSet<Node>();
 
 	@Override
@@ -30,7 +35,12 @@ public class NodeImpl implements Node {
 			for (Node node : currentLayer) {
 				if (!nodeToDistance.containsKey(node)) {
 					nodeToDistance.put(node, i);
-					nextLayer.addAll(node.getNeighbors());
+					try {
+						nextLayer.addAll(node.getNeighbors());
+					} catch (Exception e) {
+						System.out.println("Node Exception: " + e.getMessage());
+						e.printStackTrace();
+					}
 				}
 			}
 

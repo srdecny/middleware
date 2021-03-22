@@ -9,7 +9,7 @@ public class ExampleClient
 			// Use the registry on this host to find the server.
 			// The host name must be changed if the server uses
 			// another computer than the client!
-			server = (Example) Naming.lookup("//localhost/HelloServer");
+			server = (Example) Naming.lookup("//lab.d3s.mff.cuni.cz:5000/HelloServer");
 
 			// Query local and remote time
 			long localTime = System.nanoTime();
